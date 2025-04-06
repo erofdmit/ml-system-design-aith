@@ -64,14 +64,14 @@ title: ML architecture flowchart - Система поддержки управ�
 
 flowchart TD
     camera[fa:fa-video Camera stream]
-    detection_model((YOLO - Обнаружение объектов))
+    detection_model((CV - Обнаружение объектов))
     
     subgraph Обработка объектов
         detect_obstacle{{Obstacle detected?}}
         detect_post{{Post detected?}}
     end
 
-    ocr_model((EasyOCR - Распознавание текста))
+    ocr_model((OCR - Распознавание текста))
     usavp_data[(USAVP Data - координаты УСАВП)]
     analysis((Аналитика координат))
     
