@@ -41,40 +41,39 @@
 title: ML architecture flowchart - Система поддержки управления электровозом
 ---
 
+
 flowchart TD
     camera[fa:fa-video Camera stream]
-    detection_model((YOLO - Object Detection))
-    ocr_model((EasyOCR - Text Recognition))
-    usavp_data[(USAVP Data)]
-    cv_features[[Detected objects: kilometer posts, picket posts, obstacles]]
-    ocr_text[Recognized kilometer and picket numbers]
-    usavp_coord[USAVP coordinates (km/picket)]
+    detection_model((CV - Обнаружение объектов))
     
-    subgraph Analysis
-        compare_coord{{Coordinate comparison}}
-        detect_anomaly{{Obstacle detection}}
+    subgraph Обработка объектов
+        detect_obstacle{{Obstacle detected?}}
+        detect_post{{Post detected?}}
     end
 
-    alert_system{{"Alert System (Warning to Driver)"}}
+    ocr_model((OCR - Распознавание текста))
+    usavp_data[(USAVP Data - координаты УСАВП)]
+    analysis((Аналитика координат))
+    
+    alert_obstacle{{ALERT: Obstacle warning}}
+    alert_mismatch{{WARNING: Coordinate mismatch}}
 
-    monitoring[(PostgreSQL + Grafana - Monitoring and Storage)]
+    monitoring[(PostgreSQL + Grafana - Monitoring & Logs)]
 
     camera --> detection_model
-    detection_model --> cv_features
-    detection_model --> ocr_model
-    ocr_model --> ocr_text
-    usavp_data --> usavp_coord
+    detection_model --> detect_obstacle
+    detection_model --> detect_post
 
-    cv_features --> compare_coord
-    ocr_text --> compare_coord
-    usavp_coord --> compare_coord
+    detect_obstacle -- Yes --> alert_obstacle
+    alert_obstacle --> monitoring
 
-    cv_features --> detect_anomaly
+    detect_post -- Yes --> ocr_model
+    ocr_model --> analysis
+    usavp_data --> analysis
 
-    compare_coord --> alert_system
-    detect_anomaly --> alert_system
+    analysis --Mismatch--> alert_mismatch
+    alert_mismatch --> monitoring
 
-    alert_system --> monitoring
 ```
 
 ---
