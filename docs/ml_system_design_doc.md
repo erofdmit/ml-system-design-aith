@@ -52,15 +52,19 @@
 
 ```mermaid
 flowchart TD
-    camera[fa:fa-video Камера видеопотока]
-    detection_model((CV - Обнаружение столбиков))
-    ocr_model((OCR - Распознавание текста))
-    analysis((Аналитика координат))
-    alert_mismatch{{WARNING: Coordinate mismatch}}
-    monitoring[(PostgreSQL + Web Interface - Monitoring & Logs)]
+    camera["Камера видеопотока"]
+    detection_model["CV - Обнаружение столбиков"]
+    ocr_model["OCR - Распознавание текста"]
+    analysis["Аналитика координат"]
+    alert_mismatch["WARNING: Coordinate mismatch"]
+    monitoring["PostgreSQL + Web Interface (Monitoring & Logs)"]
 
-    camera --> detection_model --> ocr_model --> analysis
-    analysis --Mismatch--> alert_mismatch --> monitoring
+    camera --> detection_model
+    detection_model --> ocr_model
+    ocr_model --> analysis
+    analysis -->|Расхождение координат| alert_mismatch
+    alert_mismatch --> monitoring
+
 ```
 
 ### 2.3. Этапы решения задачи
