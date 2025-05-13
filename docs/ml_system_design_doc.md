@@ -55,13 +55,11 @@ flowchart TD
     camera[fa:fa-video Камера видеопотока]
     detection_model((CV - Обнаружение столбиков))
     ocr_model((OCR - Распознавание текста))
-    usavp_data[(УСАВП Data - координаты)]
     analysis((Аналитика координат))
     alert_mismatch{{WARNING: Coordinate mismatch}}
-    monitoring[(PostgreSQL + Grafana - Monitoring & Logs)]
+    monitoring[(PostgreSQL + Web Interface - Monitoring & Logs)]
 
     camera --> detection_model --> ocr_model --> analysis
-    usavp_data --> analysis
     analysis --Mismatch--> alert_mismatch --> monitoring
 ```
 
@@ -94,12 +92,12 @@ flowchart TD
 
 ### 4.1. Архитектура решения
 
-Камера → CV → OCR → FastAPI → PostgreSQL → Grafana.
+Камера → CV → OCR → FastAPI → PostgreSQL → Web Interface.
 
 ### 4.2. Инфраструктура и масштабируемость
 
-- Платформа уточняется позже.
-- PostgreSQL, Grafana.
+- Платформа физической реализации уточняется позже.
+- PostgreSQL, FastAPI, Docker.
 
 ### 4.3. Требования к работе системы
 
