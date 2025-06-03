@@ -178,3 +178,5 @@ dataset/
 .pb
 .pt
 .pth
+
+custom_inference/models/
