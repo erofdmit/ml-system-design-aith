@@ -175,8 +175,8 @@ cython_debug/
 
 dataset/
 
-.pb
-.pt
-.pth
+*.pb
+*.pt
+*.pth
 
 custom_inference/models/
