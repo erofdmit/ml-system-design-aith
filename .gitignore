@@ -174,3 +174,7 @@ cython_debug/
 .pypirc
 
 dataset/
+
+.pb
+.pt
+.pth
