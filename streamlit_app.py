@@ -1,9 +1,12 @@
+
 import os
+
 import requests
 import pandas as pd
 import streamlit as st
 
-API_URL = os.getenv("BACKEND_URL", "http://localhost:8000/api/inference/video")
+
+API_URL = "http://localhost:8000/api/inference/video"
 
 st.title("Video Inference Demo")
 
