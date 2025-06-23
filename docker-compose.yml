@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   app:
     build: .
@@ -14,7 +12,7 @@ services:
       - "8000:8000"
 
   postgres:
-    image: postgres:latest
+    image: postgres:15
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -24,18 +22,5 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-  grafana:
-    image: grafana/grafana:latest
-    ports:
-      - "8888:3000"
-    depends_on:
-      - postgres
-    environment:
-      GF_SECURITY_ADMIN_USER: admin
-      GF_SECURITY_ADMIN_PASSWORD: admin
-    volumes:
-      - grafana_data:/var/lib/grafana
-
 volumes:
   postgres_data:
-  grafana_data:

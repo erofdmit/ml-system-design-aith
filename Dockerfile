@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM python:3.11.9-slim
 
 # Install Poetry
 ENV POETRY_VERSION=1.8.2
@@ -12,6 +12,8 @@ RUN poetry config virtualenvs.create false \
     && poetry install --no-interaction --no-ansi --only main
 
 # Copy project
-COPY . .
+COPY ./app .
+COPY ./custom_inference .
+COPY ./static .
 
 CMD ["uvicorn", "app.asgi:app", "--host", "0.0.0.0", "--port", "8000"]
