@@ -1,18 +1,29 @@
 from __future__ import annotations
 
+import os
+from pathlib import Path
+
 import cv2
 import numpy as np
-from fastapi import FastAPI, File, UploadFile, Depends, HTTPException
+from fastapi import Depends, FastAPI, File, HTTPException, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from custom_inference.config import Opt
-from custom_inference.ocr_inference import load_model_and_converter, predict_text, get_device
+from custom_inference.ocr_inference import (
+    get_device,
+    load_model_and_converter,
+    predict_text,
+)
 from database import Base, engine, get_session
 from models import Recognition
 
 
+ROOT_DIR = Path(__file__).resolve().parent
+DEFAULT_OCR_MODEL_PATH = ROOT_DIR / "custom_inference" / "models" / "ocr" / "best_accuracy.pth"
+
 opt = Opt()
-ocr_model, ocr_converter = load_model_and_converter(opt, "ocr/best_accuracy.pth", device=get_device())
+ocr_weights = os.getenv("OCR_MODEL_PATH", str(DEFAULT_OCR_MODEL_PATH))
+ocr_model, ocr_converter = load_model_and_converter(opt, ocr_weights, device=get_device())
 
 
 async def init_models() -> None:

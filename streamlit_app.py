@@ -1,3 +1,6 @@
+import os
+from pathlib import Path
+
 import cv2
 import tempfile
 import time
@@ -5,13 +8,17 @@ from typing import Optional
 
 import requests
 import streamlit as st
-from custom_inference.yolo_inference import load_model, inference
+from custom_inference.yolo_inference import inference, load_model
+
+ROOT_DIR = Path(__file__).resolve().parent
+DEFAULT_YOLO_MODEL_PATH = ROOT_DIR / "custom_inference" / "models" / "yolo" / "best.pt"
+YOLO_MODEL_PATH = os.getenv("YOLO_MODEL_PATH", str(DEFAULT_YOLO_MODEL_PATH))
 
 
 @st.cache_resource
 def get_model():
     # Downloads pretrained weights on first run
-    return load_model("best.pt")
+    return load_model(YOLO_MODEL_PATH)
 
 
 API_URL = "http://localhost:8000/predict"
