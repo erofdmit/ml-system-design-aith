@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Inference Results</title>
+</head>
+<body>
+    <h1>Inference Results</h1>
+    {% for frame in frames %}
+        <img src="data:image/jpeg;base64,{{ frame }}" style="max-width:800px;" />
+    {% endfor %}
+    <p><a href="/api/inference/video">Back</a></p>
+</body>
+</html>

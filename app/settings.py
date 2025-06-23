@@ -12,12 +12,12 @@ class AppSettings(BaseSettings):
 
 
 class DBConfig(AppSettings):
-    HOST: str
-    PORT: str
-    USER: str
-    PASS: str
-    NAME: str
-    ECHO: bool
+    HOST: str = 'localhost'
+    PORT: str = '5432'
+    USER: str = 'postgres'
+    PASS: str = 'postgres'
+    NAME: str = 'db'
+    ECHO: bool = False
 
     class Config:
         env_prefix: str = 'DB_'

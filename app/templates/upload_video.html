@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Video Inference Upload</title>
+</head>
+<body>
+    <h1>Upload video for inference</h1>
+    <form action="/api/inference/video" method="post" enctype="multipart/form-data">
+        <label>Select video file:</label>
+        <input type="file" name="video" accept="video/mp4,video/x-m4v,video/*" required>
+        <label>FPS:</label>
+        <input type="number" name="fps" value="1" min="1" max="30">
+        <button type="submit">Upload</button>
+    </form>
+</body>
+</html>
