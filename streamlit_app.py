@@ -8,7 +8,7 @@ from custom_inference.yolo_inference import load_model, inference
 @st.cache_resource
 def get_model():
     # Downloads pretrained weights on first run
-    return load_model("yolov8n.pt")
+    return load_model("best.pt")
 
 
 def draw_boxes(frame, detections):
