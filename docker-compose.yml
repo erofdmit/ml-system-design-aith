@@ -1,13 +1,9 @@
 services:
   app:
     build: .
-    command: uvicorn app.asgi:app --host 0.0.0.0 --port 8000
+    command: uvicorn asgi:app --host 0.0.0.0 --port 8000
     volumes:
       - ./:/app
-    env_file:
-      - .env
-    depends_on:
-      - postgres
     ports:
       - "8000:8000"
 
@@ -20,17 +16,3 @@ services:
       - app
     ports:
       - "8501:8501"
-
-  postgres:
-    image: postgres:15
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: erofeev_db
-    ports:
-      - "9999:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-volumes:
-  postgres_data:

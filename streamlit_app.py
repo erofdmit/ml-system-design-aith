@@ -1,35 +1,45 @@
-import base64
-import io
-import requests
+import cv2
+import tempfile
+import time
 import streamlit as st
-from PIL import Image
+from custom_inference.yolo_inference import load_model, inference
 
-API_URL = "http://localhost:8000/api/inference/video/frames"
+
+@st.cache_resource
+def get_model():
+    # Downloads pretrained weights on first run
+    return load_model("yolov8n.pt")
+
+
+def draw_boxes(frame, detections):
+    for det in detections:
+        x, y, w, h = map(int, det["box"])
+        cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+        label = f"{det['class_id']}:{det['confidence']:.2f}"
+        cv2.putText(frame, label, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+    return frame
+
 
 st.title("Video Inference Demo")
 
-uploaded_file = st.file_uploader("Upload a video", type=["mp4", "avi", "mov"])
-fps = st.number_input("Frames per second for inference", min_value=1, value=1)
+uploaded = st.file_uploader("Upload a video", type=["mp4", "avi", "mov"])
 
-if uploaded_file and st.button("Run Inference"):
-    with st.spinner("Processing video..."):
-        file_bytes = uploaded_file.read()
-        files = {"file": (uploaded_file.name, file_bytes, uploaded_file.type)}
-        data = {"fps": str(int(fps))}
-        try:
-            resp = requests.post(API_URL, files=files, data=data)
-            resp.raise_for_status()
-        except Exception as e:
-            st.error(f"Request failed: {e}")
-        else:
-            results = resp.json().get("results", [])
-            if results:
-                st.success("Inference completed")
-                for item in results:
-                    img_bytes = base64.b64decode(item["image"])
-                    image = Image.open(io.BytesIO(img_bytes))
-                    texts = " ".join(item["texts"])
-                    caption = f"Frame {item['frame']}: {texts}"
-                    st.image(image, caption=caption)
-            else:
-                st.info("No results received")
+if uploaded and st.button("Run Inference"):
+    tfile = tempfile.NamedTemporaryFile(delete=False)
+    tfile.write(uploaded.read())
+
+    model = get_model()
+    cap = cv2.VideoCapture(tfile.name)
+    frame_placeholder = st.empty()
+
+    while cap.isOpened():
+        ret, frame = cap.read()
+        if not ret:
+            break
+        detections = inference(model, frame)
+        annotated = draw_boxes(frame, detections)
+        frame_placeholder.image(annotated, channels="BGR")
+        time.sleep(0.03)
+
+    cap.release()
+    tfile.close()

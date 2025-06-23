@@ -12,8 +12,8 @@ RUN poetry config virtualenvs.create false \
     && poetry install --no-interaction --no-ansi --only main
 
 # Copy project
-COPY ./app .
-COPY ./custom_inference .
-COPY ./static .
+COPY ./custom_inference ./custom_inference
+COPY ./static ./static
+COPY main.py asgi.py streamlit_app.py ./
 
-CMD ["uvicorn", "app.asgi:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "asgi:app", "--host", "0.0.0.0", "--port", "8000"]
