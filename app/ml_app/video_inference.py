@@ -13,7 +13,7 @@ from custom_inference.ocr_inference import (
     predict_text,
     get_device,
 )
-from app.db_ops.db_create import FrameResult
+from db_ops.db_create import FrameResult
 
 YOLO_WEIGHTS = "custom_inference/models/yolo/best.pt"
 OCR_WEIGHTS = "custom_inference/models/ocr/best.pth"

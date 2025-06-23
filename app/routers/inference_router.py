@@ -1,7 +1,7 @@
 from fastapi import APIRouter, UploadFile, File, Form, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.db_ops.connector import get_db_session
-from app.ml_app.video_inference import process_video
+from db_ops.connector import get_db_session
+from ml_app.video_inference import process_video
 
 router = APIRouter(tags=["inference"], prefix="/inference")
 

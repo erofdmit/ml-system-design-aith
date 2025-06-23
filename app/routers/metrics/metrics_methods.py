@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from app.db_ops.db_create import Trains, Trips, USAVPdata, MLData, AnomalyData
+from db_ops.db_create import Trains, Trips, USAVPdata, MLData, AnomalyData
 from sqlalchemy.orm import selectinload, joinedload
 async def fetch_and_process_trip_data(trip_id: int, session: AsyncSession):
     # Fetch trip information including the related train data

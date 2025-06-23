@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.orm import relationship
-from ..settings import settings
+from settings import settings
 from sqlalchemy.sql import func
 import asyncio
 

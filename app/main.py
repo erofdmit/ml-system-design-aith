@@ -1,10 +1,10 @@
 from fastapi import APIRouter, FastAPI
 from fastapi.staticfiles import StaticFiles
-from app.routers.data_router import data_router
-from app.routers.trip_router import trip_router
-from app.routers.signal_router import signal_router
-from app.routers.metrics.metrics_router import metrics_router
-from app.settings import settings
+from routers.data_router import data_router
+from routers.trip_router import trip_router
+from routers.signal_router import signal_router
+from routers.metrics.metrics_router import metrics_router
+from settings import settings
 import os
 
 path_static = './'

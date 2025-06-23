@@ -4,12 +4,12 @@ from typing import Dict, List
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from app.com_app.com_data import com_listener
-from app.db_ops.connector import get_db_session
-from app.db_ops.db_create import AnomalyData, MLData, Trips, USAVPdata
-from app.ml_app.ml_data import ml_listener
-from ..routers.models import AnomalyDataResponse, MLDataResponse, TrackDataInput, TripStartDataInput, WarningInput
-from ..routers.signal_router import warning
+from com_app.com_data import com_listener
+from db_ops.connector import get_db_session
+from db_ops.db_create import AnomalyData, MLData, Trips, USAVPdata
+from ml_app.ml_data import ml_listener
+from routers.models import AnomalyDataResponse, MLDataResponse, TrackDataInput, TripStartDataInput, WarningInput
+from routers.signal_router import warning
 import datetime
 
 trip_router = APIRouter(tags=['trip'], prefix='/trip')
