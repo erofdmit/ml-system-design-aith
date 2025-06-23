@@ -3,9 +3,9 @@ import asyncio
 from fastapi import APIRouter, Body, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from app.db_ops.connector import get_db_session
-from app.db_ops.db_create import Trains, Trips
-from ..routers.models import TrainDataInput, TripsDataInput
+from db_ops.connector import get_db_session
+from db_ops.db_create import Trains, Trips
+from routers.models import TrainDataInput, TripsDataInput
 import asyncio
 
 data_router = APIRouter(tags=['data'], prefix='/data')

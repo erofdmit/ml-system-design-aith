@@ -3,8 +3,8 @@ import asyncio
 from fastapi import APIRouter, Body, Depends, HTTPException, status, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from ...db_ops.connector import get_db_session
-from app.routers.metrics.metrics_methods import analyze_and_visualize_data,  fetch_and_process_trip_data
+from db_ops.connector import get_db_session
+from routers.metrics.metrics_methods import analyze_and_visualize_data,  fetch_and_process_trip_data
 import os
 
 

@@ -12,12 +12,12 @@ class AppSettings(BaseSettings):
 
 
 class DBConfig(AppSettings):
-    HOST: str
-    PORT: str
-    USER: str
-    PASS: str
-    NAME: str
-    ECHO: bool
+    HOST: str = 'localhost'
+    PORT: str = '5432'
+    USER: str = 'postgres'
+    PASS: str = 'postgres'
+    NAME: str = 'traincv'
+    ECHO: bool = False
 
     class Config:
         env_prefix: str = 'DB_'
@@ -30,7 +30,8 @@ class Settings(AppSettings):
     ROOT_PATH: str = '/api'
     DB: DBConfig = DBConfig()
     DB_URL: str = DB.generate_db_url()
-
+    HOST: str = '127.0.0.1'
+    PORT: int = 8000
     class Config:
         env_file: str = '.env'
         env_file_encoding: str = 'utf-8'
