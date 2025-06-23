@@ -35,6 +35,14 @@ CREATE TABLE "AnomalyData" (
   "ml_id" integer
 );
 
+CREATE TABLE "FrameResult" (
+  "frame_id" integer PRIMARY KEY,
+  "video_name" varchar,
+  "frame_number" integer,
+  "recognized_text" varchar,
+  "time_track" timestamp
+);
+
 ALTER TABLE "Trips" ADD FOREIGN KEY ("train_id") REFERENCES "Trains" ("train_id");
 
 ALTER TABLE "USAVPdata" ADD FOREIGN KEY ("trip_id") REFERENCES "Trips" ("trip_id");
