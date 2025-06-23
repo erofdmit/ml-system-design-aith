@@ -6,13 +6,13 @@ from fastapi import FastAPI, File, UploadFile, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from custom_inference.config import Opt
-from custom_inference.ocr_inference import load_model_and_converter, predict_text
+from custom_inference.ocr_inference import load_model_and_converter, predict_text, get_device
 from database import Base, engine, get_session
 from models import Recognition
 
 
 opt = Opt()
-ocr_model, ocr_converter = load_model_and_converter(opt, "ocr_weights.pth", device="cpu")
+ocr_model, ocr_converter = load_model_and_converter(opt, "ocr/best_accuracy.pth", device=get_device())
 
 
 async def init_models() -> None:

@@ -1,3 +1,4 @@
+import os
 import sys
 import importlib
 import cv2
@@ -7,8 +8,8 @@ import torch.nn as nn
 from PIL import Image
 from torchvision import transforms
 
-from deep_text_recognition.model import Model
-from deep_text_recognition.utils import CTCLabelConverter, AttnLabelConverter  # <-- ваши декодеры
+from .deep_text_recognition.model import Model
+from .deep_text_recognition.utils import CTCLabelConverter, AttnLabelConverter  
 
 
 def get_device(use_cuda=True):
@@ -39,6 +40,9 @@ def load_model_and_converter(opt, weights_path: str, device=None):
 
     # 2) Загружаем модель
     model = Model(opt).to(device)
+    path = os.path.abspath(os.path.dirname(__file__))
+    models_path = os.path.join(path, 'models')
+    weights_path = os.path.join(models_path, weights_path) 
     state_dict = torch.load(weights_path, map_location=device)
     model.load_state_dict(state_dict)
     model.eval()

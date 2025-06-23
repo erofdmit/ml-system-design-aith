@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from sqlalchemy import Column, DateTime, Integer, String, func
 
-from .database import Base
+from database import Base
 
 
 class Recognition(Base):
