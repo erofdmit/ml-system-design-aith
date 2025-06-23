@@ -130,10 +130,9 @@ flowchart TD
 2. Скопируйте файл `exmaple.env` в `.env` и при необходимости скорректируйте параметры
    подключения к базе данных.
 
-3. Запустите сервисы PostgreSQL и Grafana:
+3. Запустите сервисы приложения и базы данных:
 
    ```bash
-   cd app
    docker-compose up -d
    ```
 
@@ -143,14 +142,9 @@ flowchart TD
    python app/db_ops/db_create.py
    ```
 
-5. Запустите API:
+5. Контейнеры с API и веб‑клиентом Streamlit запустятся автоматически.
+   При необходимости перезапустите их вручную:
 
    ```bash
-   uvicorn app.asgi:app --reload
-   ```
-
-6. При необходимости запустите веб‑клиент Streamlit для визуализации результатов:
-
-   ```bash
-   streamlit run streamlit_app.py
+   docker-compose up -d app streamlit
    ```
