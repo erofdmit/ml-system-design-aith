@@ -1,0 +1,6 @@
+YOLOv12m summary (fused): 169 layers, 20,106,454 parameters, 0 gradients, 67.1 GFLOPs
+                 Class     Images  Instances      Box(P          R      mAP50  mAP50-95): 100%|██████████| 16/16 [00:08<00:00,  1.92it/s]
+                   all       1583       1647       0.93      0.922      0.942      0.732
+           picket_post        932        992      0.899      0.886      0.916      0.645
+        kilometer_post        653        655      0.961      0.959      0.968      0.818
+Speed: 0.1ms preprocess, 1.3ms inference, 0.0ms loss, 1.0ms postprocess per image
