@@ -1,8 +1,10 @@
+import base64
+import io
 import requests
-import pandas as pd
 import streamlit as st
+from PIL import Image
 
-API_URL = "http://localhost:8000/api/inference/video"
+API_URL = "http://localhost:8000/api/inference/video/frames"
 
 st.title("Video Inference Demo")
 
@@ -23,7 +25,11 @@ if uploaded_file and st.button("Run Inference"):
             results = resp.json().get("results", [])
             if results:
                 st.success("Inference completed")
-                df = pd.DataFrame(results)
-                st.dataframe(df)
+                for item in results:
+                    img_bytes = base64.b64decode(item["image"])
+                    image = Image.open(io.BytesIO(img_bytes))
+                    texts = " ".join(item["texts"])
+                    caption = f"Frame {item['frame']}: {texts}"
+                    st.image(image, caption=caption)
             else:
                 st.info("No results received")

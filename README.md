@@ -45,7 +45,7 @@ title: ML architecture flowchart - Система поддержки управ�
 flowchart TD
     camera[fa:fa-video Camera stream]
     detection_model((CV - Обнаружение объектов))
-    
+
     subgraph Обработка объектов
         detect_obstacle{{Obstacle detected?}}
         detect_post{{Post detected?}}
@@ -54,7 +54,7 @@ flowchart TD
     ocr_model((OCR - Распознавание текста))
     usavp_data[(USAVP Data - координаты УСАВП)]
     analysis((Аналитика координат))
-    
+
     alert_obstacle{{ALERT: Obstacle warning}}
     alert_mismatch{{WARNING: Coordinate mismatch}}
 
@@ -117,4 +117,40 @@ flowchart TD
 
 **Автор проекта:** erofdmit
 
-**По всем вопросам:** [erofeevdma@gmail.com]  
+**По всем вопросам:** [erofeevdma@gmail.com]
+
+## Запуск приложения
+
+1. Установите зависимости с помощью Poetry:
+
+   ```bash
+   poetry install
+   ```
+
+2. Скопируйте файл `exmaple.env` в `.env` и при необходимости скорректируйте параметры
+   подключения к базе данных.
+
+3. Запустите сервисы PostgreSQL и Grafana:
+
+   ```bash
+   cd app
+   docker-compose up -d
+   ```
+
+4. Инициализируйте базу данных (создание таблиц выполняется один раз):
+
+   ```bash
+   python app/db_ops/db_create.py
+   ```
+
+5. Запустите API:
+
+   ```bash
+   uvicorn app.asgi:app --reload
+   ```
+
+6. При необходимости запустите веб‑клиент Streamlit для визуализации результатов:
+
+   ```bash
+   streamlit run streamlit_app.py
+   ```
