@@ -1,5 +1,10 @@
 FROM python:3.11.9-slim
 
+# Install system dependencies for OpenCV
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libgl1 \
+    && rm -rf /var/lib/apt/lists/*
+
 # Install Poetry
 ENV POETRY_VERSION=1.8.2
 RUN pip install "poetry==${POETRY_VERSION}"
