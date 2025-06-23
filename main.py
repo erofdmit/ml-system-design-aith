@@ -8,8 +8,8 @@ from app.routers.inference_router import router as inference_router
 from settings import settings
 import os
 
-path_static = './'
-path_static = os.path.join(path_static, 'static')
+path_static = os.path.join('.', 'static')
+os.makedirs(path_static, exist_ok=True)
 
 
 def create_app():
