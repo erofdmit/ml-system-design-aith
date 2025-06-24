@@ -2,81 +2,84 @@ import time
 import streamlit as st
 import tempfile
 import os
+import cv2
+import numpy as np
+import requests
 
-# Core dependencies
-try:
-    import cv2
-    import numpy as np
-    import requests
-except ImportError as e:
-    st.error(f"❌ Missing dependency: {e}")
-    st.stop()
+# FastAPI inference endpoint URL (можно менять через сайдбар)
+API_URL = st.sidebar.text_input("API URL:", "http://localhost:8000/predict")
 
-# FastAPI inference endpoint URL
-API_URL = "http://localhost:8000/predict"
+# Параметры отображения
+display_width = st.sidebar.slider("Display width", 200, 1920, 800)
+skip_frames   = st.sidebar.number_input("Process every Nth frame", 1, 10, 1)
+conf_thresh   = st.sidebar.slider("Min detection confidence", 0.0, 1.0, 0.3)
 
-# Streamlit page config
 st.set_page_config(page_title="YOLO + EasyOCR Video Demo", layout="wide")
 st.title("📹 YOLO + EasyOCR Real-Time Video Processing")
 
-# File uploader
 uploaded = st.file_uploader("Upload a video", type=["mp4", "avi", "mov"])
 
 if uploaded and st.button("Run Inference"):
-    # Save upload to temp file
-    in_file = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
-    in_file.write(uploaded.read())
-    in_file.close()
+    # Сохраняем во временный файл
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
+    tmp.write(uploaded.read())
+    tmp.close()
 
-    # Prepare video capture
-    cap = cv2.VideoCapture(in_file.name)
+    cap = cv2.VideoCapture(tmp.name)
     if not cap.isOpened():
         st.error("❌ Could not open uploaded video.")
         st.stop()
 
-    width  = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    fps    = cap.get(cv2.CAP_PROP_FPS) or 24.0
+    orig_w      = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    orig_h      = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    fps         = cap.get(cv2.CAP_PROP_FPS) or 24.0
     frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
-    # UI placeholders
-    frame_placeholder = st.empty()
+    frame_pl = st.empty()
     progress = st.progress(0)
-    status = st.empty()
+    status   = st.empty()
 
-    # Process each frame and display
     for i in range(frame_count):
         ret, frame = cap.read()
         if not ret:
             break
+        if i % skip_frames != 0:
+            continue
 
-        # Encode and send to API
-        _, img_jpg = cv2.imencode('.jpg', frame)
+        # Отправляем кадр на API
+        _, jpg = cv2.imencode(".jpg", frame)
         try:
             resp = requests.post(
                 API_URL,
-                files={"file": ("frame.jpg", img_jpg.tobytes(), "image/jpeg")},
-                timeout=5
+                files={"file": ("frame.jpg", jpg.tobytes(), "image/jpeg")},
+                timeout=10
             )
             resp.raise_for_status()
-            nparr = np.frombuffer(resp.content, np.uint8)
-            annotated = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            detections = resp.json().get("detections", [])
         except Exception as e:
             st.error(f"❌ Inference failed at frame {i+1}: {e}")
             break
 
-        # Display annotated frame
-        frame_placeholder.image(annotated, channels="BGR", use_container_width=True)
+        # Рисуем аннотации
+        disp = cv2.resize(frame, (display_width, int(orig_h * display_width / orig_w)))
+        scale = display_width / orig_w
+        for det in detections:
+            if det["confidence"] < conf_thresh:
+                continue
+            x, y, w, h = det["box"]
+            x1, y1 = int(x * scale), int(y * scale)
+            x2, y2 = int((x + w) * scale), int((y + h) * scale)
+            cv2.rectangle(disp, (x1, y1), (x2, y2), (0, 255, 0), 2)
+            label = f"{det['class_id']} {det['confidence']:.2f}: {det['text']}"
+            cv2.putText(disp, label, (x1, y1 - 10),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
 
-        # Update progress
-        progress.progress((i+1) / frame_count)
-        status.text(f"Frame {i+1} / {frame_count}")
+        frame_pl.image(disp, channels="BGR", use_container_width=True)
+        progress.progress((i + 1) / frame_count)
+        status.text(f"Frame {i + 1}/{frame_count}")
 
-        # Small delay to simulate playback speed
         time.sleep(1.0 / fps)
 
     cap.release()
-
-    # Finalize
+    os.remove(tmp.name)
     st.success("✅ Video processing complete!")
-    os.remove(in_file.name)
