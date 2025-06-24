@@ -1,7 +1,5 @@
 
-# ВАЖНО: в папке app находится прошлая реализация проекта, которая может быть неструктурированна и нефункциональна к моменту сдачи HW1
-
-## Будет изменено в будущем
+# Простое демо по детекции объектов на видео
 
 # Система поддержки принятия решений при управлении скоростным режимом электровоза
 
@@ -45,7 +43,7 @@ title: ML architecture flowchart - Система поддержки управ�
 flowchart TD
     camera[fa:fa-video Camera stream]
     detection_model((CV - Обнаружение объектов))
-    
+
     subgraph Обработка объектов
         detect_obstacle{{Obstacle detected?}}
         detect_post{{Post detected?}}
@@ -54,7 +52,7 @@ flowchart TD
     ocr_model((OCR - Распознавание текста))
     usavp_data[(USAVP Data - координаты УСАВП)]
     analysis((Аналитика координат))
-    
+
     alert_obstacle{{ALERT: Obstacle warning}}
     alert_mismatch{{WARNING: Coordinate mismatch}}
 
@@ -117,4 +115,18 @@ flowchart TD
 
 **Автор проекта:** erofdmit
 
-**По всем вопросам:** [erofeevdma@gmail.com]  
+**По всем вопросам:** [erofeevdma@gmail.com]
+
+## Запуск приложения
+
+1. Установите зависимости:
+
+   ```bash
+   poetry install
+   ```
+
+2. Запустите Streamlit:
+
+   ```bash
+   streamlit run streamlit_app.py
+   ```
