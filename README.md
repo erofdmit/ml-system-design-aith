@@ -119,6 +119,8 @@ flowchart TD
 
 ## Запуск приложения
 
+### Локально через Poetry
+
 1. Установите зависимости:
 
    ```bash
@@ -130,3 +132,24 @@ flowchart TD
    ```bash
    streamlit run streamlit_app.py
    ```
+
+### Через docker-compose
+
+1. Запустите все сервисы:
+
+   ```bash
+   docker-compose up --build
+   ```
+
+   Доступны три контейнера:
+   - `app` – FastAPI сервис инференса.
+   - `streamlit` – веб-интерфейс.
+   - `streamlit-local` – локальный вариант интерфейса для офлайн‑тестов.
+
+2. Для нагрузки можно воспользоваться **Locust**:
+
+   ```bash
+   locust -f load_tests/locustfile.py --headless -u 10 -r 2 -t 1m --host http://localhost:8000
+   ```
+
+   Команда создаст 10 одновременных пользователей, которые отправляют запросы к API в течение минуты.
