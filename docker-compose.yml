@@ -27,6 +27,16 @@ services:
     ports:
       - "8501:8501"
 
+  streamlit-local:
+    build: .
+    command: streamlit run streamlit_local.py --server.address 0.0.0.0 --server.port 8502 --server.headless true
+    volumes:
+      - ./:/app
+    depends_on:
+      - app
+    ports:
+      - "8502:8502"
+
   postgres:
     image: postgres:15
     environment:
