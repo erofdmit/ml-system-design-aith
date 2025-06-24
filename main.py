@@ -1,69 +1,76 @@
 from __future__ import annotations
-
 import os
 from pathlib import Path
-
 import cv2
 import numpy as np
-from fastapi import Depends, FastAPI, File, HTTPException, UploadFile
+from fastapi import Depends, FastAPI, File, UploadFile, HTTPException
+from fastapi.responses import JSONResponse
+from custom_inference.config import opt
+from custom_inference.yolo_inference import load_model as load_yolo, inference as yolo_inference
+from custom_inference.ocr_inference import get_device, load_model_and_converter, predict_text
 from sqlalchemy.ext.asyncio import AsyncSession
-
-from custom_inference.config import Opt
-from custom_inference.ocr_inference import (
-    get_device,
-    load_model_and_converter,
-    predict_text,
-)
 from database import Base, engine, get_session
 from models import Recognition
 
-
 ROOT_DIR = Path(__file__).resolve().parent
-DEFAULT_OCR_MODEL_PATH = ROOT_DIR / "custom_inference" / "models" / "ocr" / "best_accuracy.pth"
 
-opt = Opt()
-ocr_weights = os.getenv("OCR_MODEL_PATH", str(DEFAULT_OCR_MODEL_PATH))
-ocr_model, ocr_converter = load_model_and_converter(opt, ocr_weights, device=get_device())
+# —– Paths to your weights
+DEFAULT_YOLO = ROOT_DIR / "custom_inference/models/yolo/best.pt"
+DEFAULT_OCR  = ROOT_DIR / "custom_inference/models/ocr/best_accuracy.pth"
 
+YOLO_PATH = os.getenv("YOLO_MODEL_PATH",  str(DEFAULT_YOLO))
+OCR_PATH  = os.getenv("OCR_MODEL_PATH",   str(DEFAULT_OCR))
 
-async def init_models() -> None:
+# —– Load both models one-time, at import
+yolo_model = load_yolo(YOLO_PATH)
+ocr_model, ocr_converter = load_model_and_converter(opt, OCR_PATH, device=get_device())
+
+async def init_db() -> None:
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-
 
 def create_app() -> FastAPI:
     app = FastAPI(title="Video Inference API")
 
     @app.on_event("startup")
-    async def on_startup() -> None:
-        await init_models()
-
-    @app.get("/ping")
-    async def ping():
-        return {"status": "ok"}
+    async def on_startup():
+        await init_db()
 
     @app.post("/predict")
-    async def predict(file: UploadFile = File(...), session: AsyncSession = Depends(get_session)) -> dict[str, str]:
+    async def predict(file: UploadFile = File(...), session: AsyncSession = Depends(get_session)):
         data = await file.read()
-        np_arr = np.frombuffer(data, np.uint8)
-        frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+        img_arr = np.frombuffer(data, dtype=np.uint8)
+        frame = cv2.imdecode(img_arr, cv2.IMREAD_COLOR)
         if frame is None:
-            raise HTTPException(status_code=400, detail="Invalid image")
+            raise HTTPException(400, "Invalid image upload")
 
-        text = predict_text(ocr_model, ocr_converter, frame, opt)
+        detections = yolo_inference(yolo_model, frame)
+        results = []
 
-        rec = Recognition(text=text)
-        session.add(rec)
+        for det in detections:
+            x, y, w, h = map(int, det["box"])
+            crop = frame[y:y+h, x:x+w]
+            text = predict_text(ocr_model, ocr_converter, crop, opt)
+            det["text"] = text
+
+            # persist recognized text
+            rec = Recognition(text=text)
+            session.add(rec)
+
+            results.append({
+                "class_id": det["class_id"],
+                "confidence": float(det["confidence"]),
+                "box": [x, y, w, h],
+                "text": text
+            })
+
         await session.commit()
-
-        return {"text": text}
+        return JSONResponse(content={"detections": results})
 
     return app
-
 
 app = create_app()
 
 if __name__ == "__main__":
     import uvicorn
-
-    uvicorn.run("main:app", host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8000)

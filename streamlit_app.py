@@ -1,77 +1,82 @@
-import os
-from pathlib import Path
-
-import cv2
-import tempfile
 import time
-from typing import Optional
-
-import requests
 import streamlit as st
-from custom_inference.yolo_inference import inference, load_model
+import tempfile
+import os
 
-ROOT_DIR = Path(__file__).resolve().parent
-DEFAULT_YOLO_MODEL_PATH = ROOT_DIR / "custom_inference" / "models" / "yolo" / "best.pt"
-YOLO_MODEL_PATH = os.getenv("YOLO_MODEL_PATH", str(DEFAULT_YOLO_MODEL_PATH))
+# Core dependencies
+try:
+    import cv2
+    import numpy as np
+    import requests
+except ImportError as e:
+    st.error(f"❌ Missing dependency: {e}")
+    st.stop()
 
-
-@st.cache_resource
-def get_model():
-    # Downloads pretrained weights on first run
-    return load_model(YOLO_MODEL_PATH)
-
-
+# FastAPI inference endpoint URL
 API_URL = "http://localhost:8000/predict"
 
+# Streamlit page config
+st.set_page_config(page_title="YOLO + EasyOCR Video Demo", layout="wide")
+st.title("📹 YOLO + EasyOCR Real-Time Video Processing")
 
-def get_text(frame) -> Optional[str]:
-    _, encoded = cv2.imencode(".jpg", frame)
-    files = {"file": ("frame.jpg", encoded.tobytes(), "image/jpeg")}
-    try:
-        resp = requests.post(API_URL, files=files, timeout=5)
-        if resp.status_code == 200:
-            return resp.json().get("text")
-    except Exception:
-        return None
-    return None
-
-
-def draw_boxes(frame, detections, text: Optional[str] = None):
-    for det in detections:
-        x, y, w, h = map(int, det["box"])
-        cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
-        label = f"{det['class_id']}:{det['confidence']:.2f}"
-        cv2.putText(frame, label, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
-
-    if text:
-        cv2.putText(frame, text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255, 0, 0), 2)
-    return frame
-
-
-st.title("Video Inference Demo")
-
+# File uploader
 uploaded = st.file_uploader("Upload a video", type=["mp4", "avi", "mov"])
 
 if uploaded and st.button("Run Inference"):
-    tfile = tempfile.NamedTemporaryFile(delete=False)
-    tfile.write(uploaded.read())
+    # Save upload to temp file
+    in_file = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
+    in_file.write(uploaded.read())
+    in_file.close()
 
-    model = get_model()
-    cap = cv2.VideoCapture(tfile.name)
+    # Prepare video capture
+    cap = cv2.VideoCapture(in_file.name)
+    if not cap.isOpened():
+        st.error("❌ Could not open uploaded video.")
+        st.stop()
+
+    width  = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    fps    = cap.get(cv2.CAP_PROP_FPS) or 24.0
+    frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+
+    # UI placeholders
     frame_placeholder = st.empty()
-    text_placeholder = st.empty()
+    progress = st.progress(0)
+    status = st.empty()
 
-    while cap.isOpened():
+    # Process each frame and display
+    for i in range(frame_count):
         ret, frame = cap.read()
         if not ret:
             break
-        detections = inference(model, frame)
-        text = get_text(frame)
-        annotated = draw_boxes(frame, detections, text)
-        frame_placeholder.image(annotated, channels="BGR")
-        if text:
-            text_placeholder.write(f"Recognized: {text}")
-        time.sleep(0.03)
+
+        # Encode and send to API
+        _, img_jpg = cv2.imencode('.jpg', frame)
+        try:
+            resp = requests.post(
+                API_URL,
+                files={"file": ("frame.jpg", img_jpg.tobytes(), "image/jpeg")},
+                timeout=5
+            )
+            resp.raise_for_status()
+            nparr = np.frombuffer(resp.content, np.uint8)
+            annotated = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        except Exception as e:
+            st.error(f"❌ Inference failed at frame {i+1}: {e}")
+            break
+
+        # Display annotated frame
+        frame_placeholder.image(annotated, channels="BGR", use_container_width=True)
+
+        # Update progress
+        progress.progress((i+1) / frame_count)
+        status.text(f"Frame {i+1} / {frame_count}")
+
+        # Small delay to simulate playback speed
+        time.sleep(1.0 / fps)
 
     cap.release()
-    tfile.close()
+
+    # Finalize
+    st.success("✅ Video processing complete!")
+    os.remove(in_file.name)

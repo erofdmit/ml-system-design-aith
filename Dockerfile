@@ -1,3 +1,4 @@
+FROM nvidia/cuda:12.2.0-runtime-ubuntu22.04
 FROM python:3.11.9-slim
 
 RUN apt-get update \
@@ -17,6 +18,7 @@ RUN poetry config virtualenvs.create false \
 
 COPY ./custom_inference ./custom_inference
 COPY ./static ./static
-COPY main.py asgi.py streamlit_app.py ./
+COPY main.py asgi.py streamlit_app.py .env ./
+
 
 CMD ["uvicorn", "asgi:app", "--host", "0.0.0.0", "--port", "8000"]

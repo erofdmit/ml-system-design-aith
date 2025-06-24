@@ -9,13 +9,15 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    db_host: str = "localhost"
+    db_host: str = "postgres"
     db_port: int = 5432
     db_user: str = "postgres"
     db_pass: str = "postgres"
     db_name: str = "postgres"
     db_echo: bool = False
-
+    ocr_model_path: str = "custom_inference/models/ocr/best_accuracy.pth"
+    yolo_model_path: str = "custom_inference/models/yolo/best.pt"
+    ocr_opt_path: str = "custom_inference/models/ocr/opt.txt"
     class Config:
         env_file = os.getenv("ENV_FILE", ".env")
         env_file_encoding = "utf-8"
