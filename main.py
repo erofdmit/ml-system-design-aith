@@ -1,25 +1,96 @@
-from fastapi import APIRouter, FastAPI
-from fastapi.staticfiles import StaticFiles
-from app.routers.data_router import data_router
-from app.routers.trip_router import trip_router
-from app.routers.signal_router import signal_router
-from app.routers.metrics.metrics_router import metrics_router
-from app.routers.inference_router import router as inference_router
-from settings import settings
+from __future__ import annotations
 import os
+from pathlib import Path
+import cv2
+import numpy as np
+from fastapi import Depends, FastAPI, File, UploadFile, HTTPException
+from fastapi.responses import JSONResponse
+from sqlalchemy.ext.asyncio import AsyncSession
 
-path_static = os.path.join('.', 'static')
-os.makedirs(path_static, exist_ok=True)
+from custom_inference.config import opt
+from custom_inference.yolo_inference import load_model as load_yolo, inference as yolo_inference
+from custom_inference.ocr_inference import (
+    get_device,
+    load_model_and_converter_strip,
+    predict_text_fixed
+)
 
+from database import Base, engine, get_session
+from models import Recognition
 
-def create_app():
-    app = FastAPI(
-        title='trainCV', version='0.0.0', openapi_version='3.1.0', docs_url='/docs', openapi_url='/docs/openapi.json'
-    )
-    app.mount("/static", StaticFiles(directory=path_static), name="static")
-    main_routers: tuple[APIRouter, ...] = (data_router, trip_router, signal_router, metrics_router, inference_router)
+ROOT_DIR = Path(__file__).resolve().parent
 
-    for router in main_routers:
-        app.include_router(router=router, prefix=settings.ROOT_PATH)
+# —– Paths to your weights
+DEFAULT_YOLO = ROOT_DIR / "custom_inference/models/yolo/best.pt"
+DEFAULT_OCR  = ROOT_DIR / "custom_inference/models/ocr/best_accuracy.pth"
+
+YOLO_PATH = os.getenv("YOLO_MODEL_PATH",  str(DEFAULT_YOLO))
+OCR_PATH  = os.getenv("OCR_MODEL_PATH",   str(DEFAULT_OCR))
+
+# —– Load YOLO one-time
+yolo_model = load_yolo(YOLO_PATH)
+
+# —– Load OCR model (strip) one-time, на нужном устройстве
+ocr_model, ocr_converter = load_model_and_converter_strip(
+    opt,
+    str(OCR_PATH),
+    device=get_device()
+)
+
+async def init_db() -> None:
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+def create_app() -> FastAPI:
+    app = FastAPI(title="Video Inference API")
+
+    @app.on_event("startup")
+    async def on_startup():
+        await init_db()
+
+    @app.post("/predict")
+    async def predict(
+        file: UploadFile = File(...),
+        session: AsyncSession = Depends(get_session)
+    ):
+        # Читаем байты и декодим в кадр OpenCV
+        data = await file.read()
+        img_arr = np.frombuffer(data, dtype=np.uint8)
+        frame = cv2.imdecode(img_arr, cv2.IMREAD_COLOR)
+        if frame is None:
+            raise HTTPException(status_code=400, detail="Invalid image upload")
+
+        # 1) Получаем детекции от YOLO
+        detections = yolo_inference(yolo_model, frame)
+        results = []
+
+        for det in detections:
+            x, y, w, h = map(int, det["box"])
+            crop = frame[y:y+h, x:x+w]
+
+            # 2) OCR только фикс–функцией
+            text = predict_text_fixed(ocr_model, ocr_converter, crop, opt)
+            det["text"] = text
+
+            # 3) Сохраняем в базу
+            rec = Recognition(text=text)
+            session.add(rec)
+
+            # 4) Собираем ответ
+            results.append({
+                "class_id":   det["class_id"],
+                "confidence": float(det["confidence"]),
+                "box":        [x, y, w, h],
+                "text":       text
+            })
+
+        await session.commit()
+        return JSONResponse(content={"detections": results})
 
     return app
+
+app = create_app()
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

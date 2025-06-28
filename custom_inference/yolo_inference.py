@@ -4,7 +4,7 @@ import cv2
 import numpy as np
 from ultralytics import YOLO
 
-def load_model(weights_path: str, device: str = 'cpu'):
+def load_model(weights_path: str, device: str = 'cuda'):
     """
     Загружает локальный .pt-файл (например, yolov12m.pt или best.pt) через класс YOLO.
     Возвращает объект модели, готовый к инференсу.
